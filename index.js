@@ -34,7 +34,7 @@ let time = 'all';
 let repeatForever = false;
 let downloadDirectory = '';
 let downloadDirectoryBase = isFunctionCompute ? '/tmp/downloads' : './downloads';
-const postDelayMilliseconds = 250;
+const postDelayMilliseconds = isFunctionCompute ? 50 : 250;
 
 let currentUserAfter = '';
 
@@ -1163,14 +1163,13 @@ function checkIfDone(lastPostId, override) {
 					);
 				}
 
-				if (httpMode && httpResolve) {
+				if (httpMode && activeTaskId && tasks[activeTaskId]) {
+					tasks[activeTaskId].status = 'completed';
+					tasks[activeTaskId].stats = downloadedPosts;
+					tasks[activeTaskId].durationSeconds = timeDiff;
+					tasks[activeTaskId].updatedAt = Date.now();
+					activeTaskId = null;
 					httpMode = false;
-					httpResolve({
-						stats: downloadedPosts,
-						durationSeconds: timeDiff,
-					});
-					httpResolve = null;
-					httpReject = null;
 				}
 
 				downloadedPosts = {
@@ -1218,6 +1217,12 @@ function checkIfDone(lastPostId, override) {
 				)}... (${numberOfPostsRemaining()[1]}/${numberOfPosts})`,
 				false,
 			);
+		}
+		if (httpMode && activeTaskId && tasks[activeTaskId]) {
+			tasks[activeTaskId].progress = { ...downloadedPosts };
+			tasks[activeTaskId].processed = numberOfPostsRemaining()[1];
+			tasks[activeTaskId].remaining = numberOfPostsRemaining()[0];
+			tasks[activeTaskId].updatedAt = Date.now();
 		}
 
 		for (let i = 0; i < Object.keys(downloadedPosts).length; i++) {
@@ -1370,6 +1375,8 @@ function sanitizeFileName(fileName) {
 let httpMode = false;
 let httpResolve = null;
 let httpReject = null;
+let activeTaskId = null;
+const tasks = {};
 
 function resetStateForHttp() {
 	userLogs = '';
@@ -1413,19 +1420,30 @@ function startDownloadWithParams(options) {
 		downloadDirectoryBase = options.downloadDirectoryBase;
 	}
 	startTime = new Date();
-	return new Promise((resolve, reject) => {
-		httpResolve = resolve;
-		httpReject = reject;
-		downloadSubredditPosts(subredditList[0], '')
-			.catch((error) => {
-				if (httpMode && httpReject) {
-					httpMode = false;
-					httpReject(error);
-					httpResolve = null;
-					httpReject = null;
-				}
-			});
+	const taskId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+	activeTaskId = taskId;
+	tasks[taskId] = {
+		status: 'running',
+		startedAt: Date.now(),
+		params: {
+			subreddits: subredditList,
+			numberOfPostsRequested: numberOfPosts,
+			sorting,
+			time,
+		},
+		progress: { ...downloadedPosts },
+		updatedAt: Date.now(),
+	};
+	downloadSubredditPosts(subredditList[0], '').catch((error) => {
+		if (activeTaskId && tasks[activeTaskId]) {
+			tasks[activeTaskId].status = 'failed';
+			tasks[activeTaskId].error = error && error.message ? error.message : String(error);
+			tasks[activeTaskId].updatedAt = Date.now();
+			activeTaskId = null;
+		}
+		httpMode = false;
 	});
+	return taskId;
 }
 
 const frontPageHtml = `<!DOCTYPE html>
@@ -1574,32 +1592,42 @@ async function handleHttpRequest(req, resp) {
 			downloadDirectoryBase,
 		};
 
-		try {
-			const result = await startDownloadWithParams(options);
-			resp.setHeader('content-type', 'application/json; charset=utf-8');
-			resp.send(
-				JSON.stringify({
-					ok: true,
-					params: {
-						subreddits: options.subredditList,
-						numberOfPostsRequested: options.numberOfPosts,
-						sorting: options.sorting,
-						time: options.time,
-					},
-					stats: result.stats,
-					durationSeconds: result.durationSeconds,
-				}),
-			);
-		} catch (error) {
-			resp.setStatusCode(500);
+		if (activeTaskId) {
+			resp.setStatusCode(409);
 			resp.setHeader('content-type', 'application/json; charset=utf-8');
 			resp.send(
 				JSON.stringify({
 					ok: false,
-					error: error && error.message ? error.message : String(error),
+					error: '已有任务正在运行',
+					activeTaskId,
 				}),
 			);
+			return;
 		}
+		const taskId = startDownloadWithParams(options);
+		resp.setHeader('content-type', 'application/json; charset=utf-8');
+		resp.send(JSON.stringify({ ok: true, taskId }));
+		return;
+	}
+
+	if (req.method === 'GET' && req.path === '/api/status') {
+		const queries = req.queries || {};
+		const taskId = queries.taskId;
+		if (!taskId) {
+			resp.setStatusCode(400);
+			resp.setHeader('content-type', 'application/json; charset=utf-8');
+			resp.send(JSON.stringify({ ok: false, error: '缺少 taskId' }));
+			return;
+		}
+		const task = tasks[taskId];
+		if (!task) {
+			resp.setStatusCode(404);
+			resp.setHeader('content-type', 'application/json; charset=utf-8');
+			resp.send(JSON.stringify({ ok: false, error: '任务不存在' }));
+			return;
+		}
+		resp.setHeader('content-type', 'application/json; charset=utf-8');
+		resp.send(JSON.stringify({ ok: true, task }));
 		return;
 	}
 
