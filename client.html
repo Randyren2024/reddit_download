@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Easy Reddit Downloader (Local Client)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 24px; }
+    label { display: block; margin-top: 12px; }
+    input, select, button { margin-top: 4px; padding: 4px 8px; font-size: 14px; }
+    button { cursor: pointer; }
+    pre { background: #111; color: #0f0; padding: 12px; margin-top: 16px; max-height: 320px; overflow: auto; font-size: 12px; }
+    .note { color: #666; font-size: 0.9em; border-left: 3px solid #ccc; padding-left: 8px; margin: 12px 0; }
+  </style>
+</head>
+<body>
+  <h1>Easy Reddit Downloader (Local Client)</h1>
+  <p>这是一个本地客户端，用于连接阿里云函数计算。</p>
+  <div class="note">
+    <p>云端 API 地址：<br><code id="api-url-display"></code></p>
+  </div>
+  
+  <form id="download-form">
+    <label>
+      Subreddit 或用户（用逗号分隔，支持 r/xxx 或 u/xxx）
+      <input name="subreddit" required placeholder="pics, videos, u/spez" />
+    </label>
+    <label>
+      下载帖子数量（0 表示全部）
+      <input name="numberOfPosts" type="number" min="0" value="0" />
+    </label>
+    <label>
+      排序方式
+      <select name="sorting">
+        <option value="top">top</option>
+        <option value="new">new</option>
+        <option value="hot">hot</option>
+        <option value="rising">rising</option>
+        <option value="controversial">controversial</option>
+      </select>
+    </label>
+    <label>
+      时间范围
+      <select name="time">
+        <option value="all">all</option>
+        <option value="year">year</option>
+        <option value="month">month</option>
+        <option value="week">week</option>
+        <option value="day">day</option>
+        <option value="hour">hour</option>
+      </select>
+    </label>
+    <button type="submit">开始下载</button>
+  </form>
+  <pre id="output"></pre>
+  <script>
+    // 这里填入刚刚部署得到的 URL
+    const API_BASE_URL = 'https://easy-reder-http-easy-re-service-wtkjubnzyp.cn-hongkong.fcapp.run';
+    
+    document.getElementById('api-url-display').textContent = API_BASE_URL;
+
+    const form = document.getElementById('download-form');
+    const output = document.getElementById('output');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        subreddit: formData.get('subreddit') || '',
+        numberOfPosts: Number(formData.get('numberOfPosts') || '0'),
+        sorting: formData.get('sorting') || 'top',
+        time: formData.get('time') || 'all'
+      };
+      output.textContent = '正在调用后端函数，请稍候...';
+      try {
+        const resp = await fetch(API_BASE_URL + '/api/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        output.textContent = '请求失败: ' + e + '\n请检查 API 地址是否正确，或函数计算是否已部署成功。';
+      }
+    });
+  </script>
+</body>
+</html>

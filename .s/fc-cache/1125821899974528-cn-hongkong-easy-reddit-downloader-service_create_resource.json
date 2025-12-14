@@ -1,0 +1,6 @@
+{
+  "serviceName": "easy-reddit-downloader-service",
+  "functionNames": [
+    "easy-reddit-downloader-service/easy-reddit-downloader-http"
+  ]
+}

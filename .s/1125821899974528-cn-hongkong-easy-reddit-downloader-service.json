@@ -1,0 +1,42 @@
+{
+  "statefulConfig": {
+    "serviceName": "easy-reddit-downloader-service",
+    "description": "",
+    "role": "",
+    "logConfig": {
+      "project": "",
+      "logstore": "",
+      "enableRequestMetrics": false,
+      "enableInstanceMetrics": false,
+      "logBeginRule": "None",
+      "enableCustomExtraLog": true
+    },
+    "serviceId": "6d029e5d-063b-4d60-9f0b-15e8b6cfad45",
+    "createdTime": "2025-12-14T12:45:34Z",
+    "lastModifiedTime": "2025-12-14T12:47:13Z",
+    "vpcConfig": {
+      "vpcId": "",
+      "vSwitchIds": [],
+      "securityGroupId": "",
+      "role": null,
+      "anytunnelViaENI": null
+    },
+    "internetAccess": true,
+    "nasConfig": {
+      "userId": -1,
+      "groupId": -1,
+      "mountPoints": []
+    },
+    "ossMountConfig": {
+      "mountPoints": []
+    },
+    "vendorConfig": null,
+    "tracingConfig": {
+      "type": null,
+      "params": null,
+      "jaegerConfig": null
+    },
+    "useSLRAuthentication": false,
+    "name": "easy-reddit-downloader-service"
+  }
+}

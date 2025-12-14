@@ -1,0 +1,44 @@
+{
+  "statefulConfig": {
+    "functionId": "4bd88848-a5f1-4b39-a1dd-97dcb3cfcdb9",
+    "functionName": "easy-reddit-downloader-http",
+    "description": "This is default function description by fc-deploy component",
+    "runtime": "nodejs14",
+    "handler": "index.handler",
+    "timeout": 300,
+    "initializer": "",
+    "initializationTimeout": 3,
+    "codeSize": 2441940,
+    "codeChecksum": "4295320191257472103",
+    "memorySize": 1024,
+    "gpuMemorySize": null,
+    "environmentVariables": {},
+    "createdTime": "2025-12-14T12:45:37Z",
+    "lastModifiedTime": "2025-12-14T12:47:13Z",
+    "instanceConcurrency": 1,
+    "instanceSoftConcurrency": null,
+    "customContainerConfig": null,
+    "caPort": null,
+    "instanceType": "e1",
+    "layers": null,
+    "layersArnV2": null,
+    "instanceLifecycleConfig": {
+      "preFreeze": {
+        "handler": "",
+        "timeout": 3,
+        "command": null
+      },
+      "preStop": {
+        "handler": "",
+        "timeout": 3,
+        "command": null
+      }
+    },
+    "customDNS": null,
+    "customRuntimeConfig": null,
+    "customHealthCheckConfig": null,
+    "sessionAffinity": null,
+    "initializerCommand": null,
+    "name": "easy-reddit-downloader-http"
+  }
+}

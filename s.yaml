@@ -1,0 +1,28 @@
+edition: 1.0.0
+name: easy-reddit-downloader
+access: default
+
+services:
+  easy-reddit-downloader-service:
+    component: fc
+    props:
+      region: cn-hongkong
+      service:
+        name: easy-reddit-downloader-service
+      function:
+        name: easy-reddit-downloader-http
+        handler: index.handler
+        runtime: nodejs14
+        codeUri: ./
+        timeout: 300
+        memorySize: 1024
+        internetAccess: true
+      triggers:
+        - name: httpTrigger
+          type: http
+          config:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+
